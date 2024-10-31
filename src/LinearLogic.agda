@@ -54,6 +54,16 @@ swap {A} {B} = abs (case var (exch₀ (pair var var)))
 raise : ∀ {A B X} → X ⊢ A → X ⊢ (A ⊸ B) ⊸ B
 raise t = abs (app var t)
 
+{-
+  Not in the original paper. START.
+-}
+-- Exercise: Show that (A ⊸ B) ⊗ (B ⊸ C) ⊸ (A ⊸ C)
+exercise : ∀ { A B C : Type } → ∅ ⊢ ((A ⊸ B) ⊗ (B ⊸ C)) ⊸ (A ⊸ C)
+exercise = abs (abs (exch₀ (case var (app (app (abs {!   !}) var) var))))
+{-
+  Not in the original paper. END.
+-}
+
 ++-assoc : ∀ {a} {A : Set a} (X Y Z : List A) → X ++ (Y ++ Z) ≡ (X ++ Y) ++ Z
 ++-assoc ∅ Y Z = refl
 ++-assoc (x , X) Y Z = cong (_,_ x) (++-assoc X Y Z)
@@ -227,3 +237,4 @@ toIL (exch {X} {Y} {Z} {W} {A} t)  = lem4
 swap′ : {A B : Type} → ⟦ ⟦ A ⟧ ⟧ x' ⟦ ⟦ B ⟧ ⟧ → ⟦ ⟦ B ⟧ ⟧ x' ⟦ ⟦ A ⟧ ⟧
 swap′ {A} {B} = [ swap {A} {B} ] ∅
 
+ 
