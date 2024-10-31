@@ -5,7 +5,7 @@ open import Data.Fin using (Fin; suc; zero)
 open import Data.Vec as Vec using (Vec) renaming (_∷_ to _,_; [] to ∅)
 open import Data.List using (_∷_; [])
 open import Data.List as List using (List; _++_) renaming (_∷_ to _,_; [] to ∅)
-open import Data.Product as Product using (∃; _×_; _,_)
+open import Data.Product as Product using (∃; _×_) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Binary.PropositionalEquality as P using (_≡_; refl; sym; cong)
 
 module IntuitionisticLogic (U : Set) (⟦_⟧ᵁ : U → Set) where
@@ -23,29 +23,50 @@ module Implicit where
   infix  4  _⊢_
 
   data _⊢_ : ∀ {k} (Γ : Vec Type k) (A : Type) → Set where
-    var   : ∀ {k} {Γ : Vec Type k} (x : Fin k) → Γ ⊢ Vec.lookup x Γ
-    abs   : ∀ {A B} {k} {Γ : Vec Type k} → A , Γ ⊢ B → Γ ⊢ A ⇒ B
-    app   : ∀ {A B} {k} {Γ : Vec Type k} → Γ ⊢ A ⇒ B → Γ ⊢ A → Γ ⊢ B
-    pair  : ∀ {A B} {k} {Γ : Vec Type k} → Γ ⊢ A → Γ ⊢ B → Γ ⊢ A ⊗ B
-    case  : ∀ {A B C} {k} {Γ : Vec Type k} → Γ ⊢ A ⊗ B → A , B , Γ ⊢ C → Γ ⊢ C
+    var   : ∀ {k} {Γ : Vec Type k} (x : Fin k) 
+          ----------------------
+          → Γ ⊢ Vec.lookup Γ x
+    abs   : ∀ {A B} {k} {Γ : Vec Type k} 
+          → A , Γ ⊢ B 
+          -------------------
+          → Γ ⊢ A ⇒ B
+    app   : ∀ {A B} {k} {Γ : Vec Type k} 
+          → Γ ⊢ A ⇒ B     →     Γ ⊢ A 
+          ------------------------------
+          → Γ ⊢ B
+    pair  : ∀ {A B} {k} {Γ : Vec Type k} 
+          → Γ ⊢ A     →     Γ ⊢ B 
+          ------------------------------
+          → Γ ⊢ A ⊗ B
+    case  : ∀ {A B C} {k} {Γ : Vec Type k} 
+          → Γ ⊢ A ⊗ B     →     A , B , Γ ⊢ C 
+          ------------------------------------
+          → Γ ⊢ C
 
+  {-
+    This is the first instance of our running example: the swap function, which shows that conjunction is
+    commutative.
+  -}
   swap : ∀ {A B} {k} {Γ : Vec Type k} → Γ ⊢ A ⊗ B ⇒ B ⊗ A
   swap = abs (case (var zero) (pair (var (suc zero)) (var zero)))
 
+  {-
+    Proving the admissibility of exchange.
+  -}
   Vec-exch : ∀ {k} (i : Fin k) → Vec Type (suc k) → Vec Type (suc k)
   Vec-exch  zero    (A , B , Γ)  = B , A , Γ
   Vec-exch (suc i)  (A , Γ)      = A , (Vec-exch i Γ)
 
-  lemma-var : ∀ {k} {Γ : Vec Type (suc k)} → ∀ i x → ∃ λ y → Vec.lookup x Γ ≡ Vec.lookup y (Vec-exch i Γ)
-  lemma-var {Γ = A , B , Γ} zero     zero           = suc zero , refl
-  lemma-var {Γ = A , B , Γ} zero     (suc zero)     = zero , refl
-  lemma-var {Γ = A , B , Γ} zero     (suc (suc x))  = suc (suc x) , refl
-  lemma-var {Γ = A , Γ} (suc i)  zero           = zero , refl
+  lemma-var : ∀ {k} {Γ : Vec Type (suc k)} → ∀ i x → ∃ λ y → Vec.lookup Γ x ≡ Vec.lookup (Vec-exch i Γ) y
+  lemma-var {Γ = A , B , Γ} zero     zero           = ⟨ suc zero , refl ⟩
+  lemma-var {Γ = A , B , Γ} zero     (suc zero)     = ⟨ zero , refl ⟩
+  lemma-var {Γ = A , B , Γ} zero     (suc (suc x))  = ⟨ suc (suc x) , refl ⟩
+  lemma-var {Γ = A , Γ} (suc i)  zero           = ⟨ zero , refl ⟩
   lemma-var {Γ = A , Γ} (suc i)  (suc x)        = Product.map suc id (lemma-var {Γ = Γ} i x)
 
   exch : ∀ {k} {Γ : Vec Type (suc k)} {A} → ∀ i → Γ ⊢ A → Vec-exch i Γ ⊢ A
   exch {Γ = Γ} i (var x) with lemma-var {Γ = Γ} i x
-  exch {Γ = Γ} i (var x) | y , p rewrite p  = var y
+  exch {Γ = Γ} i (var x) | ⟨ y , p ⟩ rewrite p  = var y
   exch i (abs t)     = abs (exch (suc i) t)
   exch i (app s t)   = app (exch i s) (exch i t)
   exch i (pair s t)  = pair (exch i s) (exch i t)
@@ -56,14 +77,36 @@ module Explicit where
   infix  4  _⊢_
 
   data _⊢_ : ∀ (X : List Type) (A : Type) → Set where
-    var   : ∀ {A} → A , ∅ ⊢ A
-    abs   : ∀ {X A B} → A , X ⊢ B → X ⊢ A ⇒ B
-    app   : ∀ {X Y A B} → X ⊢ A ⇒ B → Y ⊢ A → X ++ Y ⊢ B
-    pair  : ∀ {X Y A B} → X ⊢ A → Y ⊢ B → X ++ Y ⊢ A ⊗ B
-    case  : ∀ {X Y A B C} → X ⊢ A ⊗ B → A , B , Y ⊢ C → X ++ Y ⊢ C
-    weak  : ∀ {X Y A} → X ⊢ A → X ++ Y ⊢ A
-    cont  : ∀ {X A B} → A , A , X ⊢ B → A , X ⊢ B
-    exch  : ∀ {X Y Z W A} →  (X ++ Z) ++ (Y ++ W) ⊢ A
+    var   : ∀ {A} 
+          -------------
+          → A , ∅ ⊢ A
+    abs   : ∀ {X A B} 
+          → A , X ⊢ B 
+          -------------
+          → X ⊢ A ⇒ B
+    app   : ∀ {X Y A B} 
+          → X ⊢ A ⇒ B     →     Y ⊢ A 
+          -----------------------------
+          → X ++ Y ⊢ B
+    pair  : ∀ {X Y A B} 
+          → X ⊢ A     →     Y ⊢ B 
+          --------------------------
+          → X ++ Y ⊢ A ⊗ B
+    case  : ∀ {X Y A B C} 
+          → X ⊢ A ⊗ B     →     A , B , Y ⊢ C 
+          -------------------------------------
+          → X ++ Y ⊢ C
+    weak  : ∀ {X Y A} 
+          → X ⊢ A 
+          ---------------
+          → X ++ Y ⊢ A
+    cont  : ∀ {X A B} 
+          → A , A , X ⊢ B 
+          ------------------
+          → A , X ⊢ B
+    exch  : ∀ {X Y Z W A} 
+          →  (X ++ Z) ++ (Y ++ W) ⊢ A
+          ------------------------------
           →  (X ++ Y) ++ (Z ++ W) ⊢ A
 
   exch₀ : ∀ {X A B C} → B , A , X ⊢ C → A , B , X ⊢ C
@@ -106,22 +149,22 @@ module Explicit where
   Ctxt-exch {X = A , X} {Y} {Z} {W} (A′ , E) = A′ , Ctxt-exch {X} {Y} {Z} {W} E
 
   Ctxt-split : {X Y : List Type} → Ctxt ⟦ X ++ Y ⟧ → Ctxt ⟦ X ⟧ × Ctxt ⟦ Y ⟧
-  Ctxt-split {∅} {Y} E = ∅ , E
+  Ctxt-split {∅} {Y} E = ⟨ ∅ , E ⟩
   Ctxt-split {A , X} {Y} (A′ , E) with Ctxt-split {X} {Y} E
-  ... | Eˣ , Eʸ = ((A′ , Eˣ) , Eʸ)
+  ... | ⟨ Eˣ , Eʸ ⟩ = ⟨ (A′ , Eˣ) , Eʸ ⟩
 
   reify : {A : Type} {X : List Type} → X ⊢ A → (Ctxt ⟦ X ⟧ → ⟦ A ⟧)
   reify var         (x , ∅)   = x
   reify (abs t)     E         = λ x → reify t (x , E)
   reify (app s t)   E         with Ctxt-split E
-  ... | Eˢ , Eᵗ               = (reify s Eˢ) (reify t Eᵗ)
+  ... | ⟨ Eˢ , Eᵗ ⟩           = (reify s Eˢ) (reify t Eᵗ)
   reify (pair s t)  E         with Ctxt-split E
-  ... | Eˢ , Eᵗ               = (reify s Eˢ , reify t Eᵗ)
+  ... | ⟨ Eˢ , Eᵗ ⟩           = ⟨ reify s Eˢ , reify t Eᵗ ⟩
   reify (case s t)  E         with Ctxt-split E
-  ... | Eˢ , Eᵗ               = case reify s Eˢ of λ{ (x , y) → reify t (x , y , Eᵗ)}
-  reify (weak {X} s)    E         with Ctxt-split {X} E
-  ... | Eˢ , Eᵗ               = reify s Eˢ
-  reify (cont t)    (x , E)   = reify t (x , x , E)
+  ... | ⟨ Eˢ , Eᵗ ⟩           = case reify s Eˢ of λ{ ⟨ x , y ⟩ → reify t (x , y , Eᵗ)}
+  reify (weak {X} s) E        with Ctxt-split {X} E
+  ... | ⟨ Eˢ , Eᵗ ⟩           = reify s Eˢ
+  reify (cont t) (x , E)      = reify t (x , x , E)
   reify (exch {X} {Y} {Z} {W} t)    E         = reify t (Ctxt-exch {X} {Y} {Z} {W} E)
 
   [_] : {A : Type} {X : List Type} → X ⊢ A → (Ctxt ⟦ X ⟧ → ⟦ A ⟧)
