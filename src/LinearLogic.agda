@@ -1,6 +1,6 @@
 open import Function using (case_of_; _∘_)
 open import Data.List using (List; _++_; map) renaming (_∷_ to _,_; _∷ʳ_ to _,′_; [] to ∅)
-open import Data.List.Properties using (map-++-commute)
+open import Data.List.Properties using (map-++)
 open import Data.Product using () renaming (_×_ to _x'_)
 open import Relation.Binary.PropositionalEquality as PropEq using (_≡_; refl; sym; cong)
 
@@ -18,12 +18,28 @@ data Type : Set where
   _⊸_  : Type → Type → Type
 
 data _⊢_ : ∀ (X : List Type) (A : Type) → Set where
-  var   : ∀ {A} → A , ∅ ⊢ A
-  abs   : ∀ {X A B} → A , X ⊢ B → X ⊢ A ⊸ B
-  app   : ∀ {X Y A B} → X ⊢ A ⊸ B → Y ⊢ A → X ++ Y ⊢ B
-  pair  : ∀ {X Y A B} → X ⊢ A → Y ⊢ B → X ++ Y ⊢ A ⊗ B
-  case  : ∀ {X Y A B C } → X ⊢ A ⊗ B → A , B , Y ⊢ C → X ++ Y ⊢ C
-  exch  : ∀ {X Y Z W A} →  (X ++ Z) ++ (Y ++ W) ⊢ A
+  var   : ∀ {A} 
+        -------------
+        → A , ∅ ⊢ A
+  abs   : ∀ {X A B} 
+        → A , X ⊢ B 
+        --------------
+        → X ⊢ A ⊸ B
+  app   : ∀ {X Y A B} 
+        → X ⊢ A ⊸ B     →     Y ⊢ A 
+        ----------------------------
+        → X ++ Y ⊢ B
+  pair  : ∀ {X Y A B} 
+        → X ⊢ A     →     Y ⊢ B 
+        ---------------------------
+        → X ++ Y ⊢ A ⊗ B
+  case  : ∀ {X Y A B C } 
+        → X ⊢ A ⊗ B     →     A , B , Y ⊢ C 
+        ------------------------------------
+        → X ++ Y ⊢ C
+  exch  : ∀ {X Y Z W A} 
+        →  (X ++ Z) ++ (Y ++ W) ⊢ A
+        -----------------------------
         →  (X ++ Y) ++ (Z ++ W) ⊢ A
 
 ¬_ : Type → Type
@@ -182,7 +198,7 @@ instance
   ReifyCtxt = record { ⟦_⟧ = map ⟦_⟧ }
 
 ⟦X++Y⟧=⟦X⟧++⟦Y⟧ : (X Y : List Type) → ⟦ X ++ Y ⟧ ≡ ⟦ X ⟧ ++ ⟦ Y ⟧
-⟦X++Y⟧=⟦X⟧++⟦Y⟧ X Y = map-++-commute ⟦_⟧ X Y
+⟦X++Y⟧=⟦X⟧++⟦Y⟧ X Y = map-++ ⟦_⟧ X Y
 
 toIL : ∀ {X A} → X ⊢ A → ⟦ X ⟧ ⊢IL ⟦ A ⟧
 toIL var       = var

@@ -1,7 +1,7 @@
 open import Function using (_∘_)
 open import Data.List using (List; _++_) renaming (_∷_ to _,_; _∷ʳ_ to _,′_; [] to ∅)
 open import Data.Sum using (_⊎_; inj₁; inj₂)
-open import Data.Product using (∃; _,_)
+open import Data.Product using (∃) renaming (_,_ to ⟨_,_⟩)
 open import Relation.Nullary using (Dec; yes; no)
 open import Relation.Nullary.Decidable using (True; toWitness)
 open import Relation.Binary.PropositionalEquality as PropEq using (_≡_; refl; sym; cong)
