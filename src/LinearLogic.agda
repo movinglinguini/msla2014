@@ -59,7 +59,7 @@ raise t = abs (app var t)
 -}
 -- Exercise: Show that (A ⊸ B) ⊗ (B ⊸ C) ⊸ (A ⊸ C)
 exercise : ∀ { A B C : Type } → ∅ ⊢ ((A ⊸ B) ⊗ (B ⊸ C)) ⊸ (A ⊸ C)
-exercise = abs (abs (exch₀ (case var (app (app (abs {!   !}) var) var))))
+exercise { A } { B } { C } = abs (case var (abs (exch { A , ∅ } { A ⊸ B , ∅ } { B ⊸ C , ∅ } { ∅ } { C } (exch₀ (app {B ⊸ C , ∅} {A , A ⊸ B , ∅} {B} {C} var (exch₀ (app var var)))))))
 {-
   Not in the original paper. END.
 -}
@@ -237,4 +237,4 @@ toIL (exch {X} {Y} {Z} {W} {A} t)  = lem4
 swap′ : {A B : Type} → ⟦ ⟦ A ⟧ ⟧ x' ⟦ ⟦ B ⟧ ⟧ → ⟦ ⟦ B ⟧ ⟧ x' ⟦ ⟦ A ⟧ ⟧
 swap′ {A} {B} = [ swap {A} {B} ] ∅
 
- 
+  
